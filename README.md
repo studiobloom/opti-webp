@@ -1,7 +1,13 @@
 # Opti-WebP
 
-Opti-WebP is an image optimization tool that enables bulk resizing, compression, and conversion of non-WebP images to an optimized WebP format. 
-It helps reduce image file sizes while maintaining visual quality, making it suitable for web development and optimization tasks.
+Opti-WebP is an image optimization tool that enables bulk resizing, compression, and conversion of non-WebP 
+images to an optimized WebP format. It helps reduce image file sizes while maintaining visual quality, making 
+it suitable for web development and optimization tasks.
+
+## Installation
+
+-You can either download this repo and run the .exe, or run the opti-webp.py program yourself although you 
+are likely to require downloading some additional libraries
 
 ## Features
 
@@ -9,7 +15,7 @@ It helps reduce image file sizes while maintaining visual quality, making it sui
 - Limit the maximum width/height of images while preserving aspect ratio.
 - Supports various image formats, including PNG, JPEG, GIF, BMP, HEIC, TIFF, and TIF.
 - Optimized images are saved as WebP format, providing smaller file sizes.
-- Easy-to-use graphical user interface (GUI) for selecting the target directory and configuring the max dimension size.
+- Easy-to-use GUI for selecting the target directory and configuring the max dimension size.
 
 ## Usage
 
