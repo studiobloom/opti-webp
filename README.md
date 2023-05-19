@@ -6,8 +6,7 @@ it suitable for web development and optimization tasks.
 
 ## Installation
 
--You can download the latest release: 
-[![Latest Release](https://img.shields.io/github/v/release/studiobloom/opti-webp?include_prereleases&sort=semver)](https://github.com/studiobloom/opti-webp/releases/latest)
+-You can download the latest release: [Latest Release](https://github.com/studiobloom/opti-webp/releases/latest)
 
 -OR you can download this repo and run the .exe, or simply run the opti-webp.py program yourself although you 
 are likely to require downloading some additional libraries and you should remove the icon function.
