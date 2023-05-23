@@ -21,7 +21,7 @@ are likely to require downloading some additional libraries and you should remov
 
 ## Usage
 
-1. Download the latest release from the [Releases](https://github.com/your-username/opti-webp/releases) page.
+1. Download the latest release from the [Releases](https://github.com/studiobloom/opti-webp/releases) page.
 2. Extract the contents of the release package.
 3. Run the `opti-webp.exe` executable.
 4. Choose the directory containing the images you want to optimize.
@@ -33,7 +33,7 @@ are likely to require downloading some additional libraries and you should remov
 
 ## Credits
 
-Opti-WebP is created by John Large (aka bloom) and is available at [GitHub](https://github.com/your-username/opti-webp). 
+Opti-WebP is created by John Large (aka bloom) and is available at [GitHub](https://github.com/studiobloom/opti-webp). 
 Visit the [website](https://studiobloom.xyz) for more information and updates.
 
 
