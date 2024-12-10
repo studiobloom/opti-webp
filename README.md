@@ -4,6 +4,8 @@ Opti-WebP is an image optimization tool that enables bulk resizing, compression,
 images to an optimized WebP format. It helps reduce image file sizes while maintaining visual quality, making 
 it suitable for web development and optimization tasks.
 
+![Opti-WebP Demo](https://raw.githubusercontent.com/studiobloom/opti-webp/refs/heads/main/README.gif)
+
 ## Installation
 
 -You can download the latest release: [Latest Release](https://github.com/studiobloom/opti-webp/releases/latest)
