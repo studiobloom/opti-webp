@@ -4,14 +4,9 @@ Opti-WebP is an image optimization tool that enables bulk resizing, compression,
 images to an optimized WebP format. It helps reduce image file sizes while maintaining visual quality, making 
 it suitable for web development and optimization tasks.
 
+**[Download Latest Release](https://github.com/studiobloom/opti-webp/releases/latest)**
+
 ![Opti-WebP Demo](https://raw.githubusercontent.com/studiobloom/opti-webp/refs/heads/main/README.gif)
-
-## Installation
-
--You can download the latest release: [Latest Release](https://github.com/studiobloom/opti-webp/releases/latest)
-
--OR you can download this repo and run the .exe, or simply run the opti-webp.py program yourself although you 
-are likely to require downloading some additional libraries and you should remove the icon function.
 
 ## Features
 
@@ -27,17 +22,11 @@ are likely to require downloading some additional libraries and you should remov
 2. Extract the contents of the release package.
 3. Run the `opti-webp.exe` executable.
 4. Choose the directory containing the images you want to optimize.
-5. Set the maximum dimension size (width/height) for the images. (500px-4000px is suggested)
+5. Set the maximum dimension size (width/height) for the images.
 6. Click the "OK" button to start the optimization process.
 7. Opti-WebP will resize, compress, and convert the images to WebP format.
-8. The optimized images will be saved in the same directory with "_resized.png" and ".webp" extensions.
+8. The optimized images can be saved in the same directory or a custom set one.
 9. Once the optimization process is complete, you can find the optimized images in the target directory.
-
-## Credits
-
-Opti-WebP is created by John Large (aka bloom) and is available at [GitHub](https://github.com/studiobloom/opti-webp). 
-Visit the [website](https://studiobloom.xyz) for more information and updates.
-
 
 ## License
 
