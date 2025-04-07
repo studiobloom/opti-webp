@@ -209,6 +209,7 @@ class OptiWebpGUI(ctk.CTk):
         self.max_height = ctk.IntVar(value=2000)
         self.delete_original = ctk.BooleanVar(value=False)
         self.include_subdirectories = ctk.BooleanVar(value=True)
+        self.preserve_structure = ctk.BooleanVar(value=True)  # Add preserve structure variable
         self.processing = False
         self.progress_value = ctk.DoubleVar(value=0.0)
         self.total_images = 0
@@ -401,6 +402,22 @@ class OptiWebpGUI(ctk.CTk):
             state="disabled"
         )
         self.output_browse_button.grid(row=4, column=2, padx=(0, 20), pady=(0, 10))
+
+        # Preserve folder structure checkbox (add this new checkbox)
+        self.preserve_structure_checkbox = ctk.CTkCheckBox(
+            settings_frame,
+            text="Preserve Folder Structure in Output",
+            variable=self.preserve_structure,
+            checkbox_width=20,
+            checkbox_height=20,
+            corner_radius=4,
+            border_width=2,
+            hover=True,
+            fg_color=HIGHLIGHT_COLOR,
+            hover_color=self.adjust_color_brightness(HIGHLIGHT_COLOR, -20),
+            state="disabled"  # Disabled by default until both custom output and subdirectories are enabled
+        )
+        self.preserve_structure_checkbox.grid(row=5, column=0, columnspan=3, padx=20, pady=(0, 10), sticky="w")
 
         # Create preview frame with scrollbar
         preview_container = ctk.CTkFrame(self, fg_color="transparent")
@@ -766,6 +783,12 @@ class OptiWebpGUI(ctk.CTk):
         """Handle subdirectories checkbox toggle"""
         if self.selected_directory.get():
             self.update_preview_for_directory()
+        
+        # Enable/disable preserve structure checkbox based on subdirectories toggle
+        if self.include_subdirectories.get() and self.custom_output.get():
+            self.preserve_structure_checkbox.configure(state="normal")
+        else:
+            self.preserve_structure_checkbox.configure(state="disabled")
 
     def log(self, message):
         self.log_text += message + "\n"
@@ -855,6 +878,12 @@ class OptiWebpGUI(ctk.CTk):
                     # Force the GUI to update
                     self.update_idletasks()
 
+                # Get preserve structure value for passing to resize_and_convert
+                preserve_structure = self.preserve_structure.get()
+                # Only use preserve_structure if both custom output and subdirectories are enabled
+                if not (self.custom_output.get() and include_subdirectories):
+                    preserve_structure = True  # Default to True in other cases
+
                 opti_webp.resize_and_convert(
                     directory, 
                     max_width,
@@ -863,6 +892,7 @@ class OptiWebpGUI(ctk.CTk):
                     include_subdirectories,  # process_subdirs parameter
                     self.custom_output.get(),  # use_custom_output parameter
                     output_path,  # custom_output_dir parameter
+                    preserve_structure,  # preserve_structure parameter
                     update_progress  # progress_callback parameter
                 )
                 
@@ -891,6 +921,12 @@ class OptiWebpGUI(ctk.CTk):
                 text_color=("black", "white")  # Default text colors for light/dark mode
             )
             self.output_browse_button.configure(state="normal")
+            
+            # Enable preserve structure checkbox only if subdirectories are also enabled
+            if self.include_subdirectories.get():
+                self.preserve_structure_checkbox.configure(state="normal")
+            else:
+                self.preserve_structure_checkbox.configure(state="disabled")
         else:
             # Disable custom output directory and show input directory
             self.output_dir_label.configure(text_color="gray")
@@ -902,6 +938,9 @@ class OptiWebpGUI(ctk.CTk):
                 text_color=("gray50", "gray60")  # Grayed out text for disabled state
             )
             self.output_browse_button.configure(state="disabled")
+            
+            # Disable preserve structure checkbox
+            self.preserve_structure_checkbox.configure(state="disabled")
 
     def browse_output_directory(self):
         """Open a dialog to select the output directory"""
