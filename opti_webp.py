@@ -182,6 +182,35 @@ class CustomOutputDialog(tk.Toplevel):
         self.use_custom_output = False
         self.destroy()
 
+class PreserveFolderStructureDialog(tk.Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Preserve Folder Structure")
+        self.iconbitmap(get_icon_path())
+        self.geometry("400x250")
+        self.resizable(False, False)
+
+        self.preserve_structure = True
+        self.create_widgets()
+
+    def create_widgets(self):
+        label = tk.Label(self, text="When saving to a custom output directory,\nwould you like to preserve the folder structure\nfrom the source directory?")
+        label.pack(pady=10)
+
+        yes_button = tk.Button(self, text="Yes, preserve folder structure", command=self.set_preserve_true)
+        yes_button.pack(pady=5)
+
+        no_button = tk.Button(self, text="No, put all files in one directory", command=self.set_preserve_false)
+        no_button.pack(pady=5)
+        
+    def set_preserve_true(self):
+        self.preserve_structure = True
+        self.destroy()
+        
+    def set_preserve_false(self):
+        self.preserve_structure = False
+        self.destroy()
+
 def get_dimensions():
     root = tk.Tk()
     root.withdraw()
@@ -215,6 +244,13 @@ def get_custom_output_option():
     else:
         return False, None
 
+def get_preserve_folder_structure():
+    root = tk.Tk()
+    root.withdraw()
+    dialog = PreserveFolderStructureDialog(root)
+    root.wait_window(dialog)
+    return dialog.preserve_structure
+
 def count_images(directory, include_subdirs=False):
     image_count = 0
     
@@ -230,7 +266,7 @@ def count_images(directory, include_subdirs=False):
     print(f"Optimizable Images found: {image_count}")
     return image_count
 
-def process_image(img_path, max_width, max_height, delete_original=False, custom_output_dir=None, progress_callback=None):
+def process_image(img_path, max_width, max_height, delete_original=False, custom_output_dir=None, preserve_structure=True, progress_callback=None, base_directory=None):
     try:
         filename = os.path.basename(img_path)
         directory = os.path.dirname(img_path)
@@ -276,13 +312,15 @@ def process_image(img_path, max_width, max_height, delete_original=False, custom
         
         # If custom output directory is specified, use it for WebP output
         if custom_output_dir:
+            # Default output directory is the custom output directory
             output_dir = custom_output_dir
-            # Create subdirectory structure if we're processing subdirectories
-            if directory.startswith(os.path.commonpath([directory, img_path])):
-                rel_path = os.path.relpath(directory, os.path.commonpath([directory, img_path]))
-                if rel_path != '.':
-                    output_dir = os.path.join(custom_output_dir, rel_path)
-                    os.makedirs(output_dir, exist_ok=True)
+            
+            # If preserving structure and we're not in the base directory
+            if preserve_structure and base_directory is not None and directory != base_directory:
+                # Get the path relative to the base directory
+                rel_path = os.path.relpath(directory, base_directory)
+                output_dir = os.path.join(custom_output_dir, rel_path)
+                os.makedirs(output_dir, exist_ok=True)
         else:
             output_dir = directory
 
@@ -322,7 +360,7 @@ def process_image(img_path, max_width, max_height, delete_original=False, custom
         print(f"An error occurred while processing image {filename}: {e}")
         return False
 
-def resize_and_convert(directory, max_width, max_height, delete_original=False, process_subdirs=False, use_custom_output=False, custom_output_dir=None, progress_callback=None):
+def resize_and_convert(directory, max_width, max_height, delete_original=False, process_subdirs=False, use_custom_output=False, custom_output_dir=None, preserve_structure=True, progress_callback=None):
     image_count = count_images(directory, process_subdirs)
     if image_count == 0:
         print("No optimizable images found.")
@@ -334,10 +372,14 @@ def resize_and_convert(directory, max_width, max_height, delete_original=False, 
     
     if use_custom_output and custom_output_dir:
         print(f"Saving all WebP images to: {custom_output_dir}")
+        print(f"Preserving folder structure: {'Yes' if preserve_structure else 'No'}")
         # Create output directory if it doesn't exist
         os.makedirs(custom_output_dir, exist_ok=True)
     
     processed_count = 0
+    
+    # Use the input directory as the base for relative paths
+    base_directory = directory
     
     if process_subdirs:
         # Process all subdirectories
@@ -345,14 +387,18 @@ def resize_and_convert(directory, max_width, max_height, delete_original=False, 
             for filename in files:
                 if filename.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp", ".heic", ".tiff", ".tif")):
                     img_path = os.path.join(root, filename)
-                    if process_image(img_path, max_width, max_height, delete_original, custom_output_dir if use_custom_output else None, progress_callback):
+                    if process_image(img_path, max_width, max_height, delete_original, 
+                                     custom_output_dir if use_custom_output else None, 
+                                     preserve_structure, progress_callback, base_directory):
                         processed_count += 1
     else:
         # Process only the selected directory
         for filename in os.listdir(directory):
             if filename.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp", ".heic", ".tiff", ".tif")):
                 img_path = os.path.join(directory, filename)
-                if process_image(img_path, max_width, max_height, delete_original, custom_output_dir if use_custom_output else None, progress_callback):
+                if process_image(img_path, max_width, max_height, delete_original, 
+                                 custom_output_dir if use_custom_output else None, 
+                                 preserve_structure, progress_callback, base_directory):
                     processed_count += 1
     
     print(f"Successfully processed {processed_count} out of {image_count} images.")
@@ -365,8 +411,12 @@ if __name__ == "__main__":
         max_width, max_height = get_dimensions()
         process_subdirs = get_process_subdirs_option()
         use_custom_output, custom_output_dir = get_custom_output_option()
+        preserve_structure = True
+        if use_custom_output and process_subdirs:
+            preserve_structure = get_preserve_folder_structure()
         delete_original = get_delete_original_option()
-        resize_and_convert(directory, max_width, max_height, delete_original, process_subdirs, use_custom_output, custom_output_dir)
+        resize_and_convert(directory, max_width, max_height, delete_original, process_subdirs, 
+                          use_custom_output, custom_output_dir, preserve_structure)
     
     # Keep the command window open and prompt the user to restart
     while True:
@@ -378,7 +428,11 @@ if __name__ == "__main__":
                 max_width, max_height = get_dimensions()
                 process_subdirs = get_process_subdirs_option()
                 use_custom_output, custom_output_dir = get_custom_output_option()
+                preserve_structure = True
+                if use_custom_output and process_subdirs:
+                    preserve_structure = get_preserve_folder_structure()
                 delete_original = get_delete_original_option()
-                resize_and_convert(directory, max_width, max_height, delete_original, process_subdirs, use_custom_output, custom_output_dir)
+                resize_and_convert(directory, max_width, max_height, delete_original, process_subdirs, 
+                                  use_custom_output, custom_output_dir, preserve_structure)
         else:
             break
