@@ -6,6 +6,8 @@ from tkinter import filedialog, messagebox
 from PIL import Image, ImageTk
 import threading
 import importlib.util
+from customtkinter import CTkImage
+import opti_webp
 
 def resource_path(relative_path):
     """Get absolute path to resource, works for dev and for PyInstaller"""
@@ -14,12 +16,6 @@ def resource_path(relative_path):
     except Exception:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
-
-# Import functions from opti_webp.py
-opti_webp_path = resource_path("opti_webp.py")
-spec = importlib.util.spec_from_file_location("opti_webp", opti_webp_path)
-opti_webp = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(opti_webp)
 
 ctk.set_appearance_mode("System")
 ctk.set_default_color_theme("blue") 
@@ -199,6 +195,7 @@ class OptiWebpGUI(ctk.CTk):
         self.selected_directory = ctk.StringVar(value="")
         self.output_directory = ctk.StringVar(value="")
         self.custom_output = ctk.BooleanVar(value=False)
+        self.preserve_exif = ctk.BooleanVar(value=False)
         
         # Link selected_directory to output_directory when custom_output is False
         self.selected_directory.trace_add("write", self._update_output_directory)
@@ -418,6 +415,21 @@ class OptiWebpGUI(ctk.CTk):
             state="disabled"  # Disabled by default until both custom output and subdirectories are enabled
         )
         self.preserve_structure_checkbox.grid(row=5, column=0, columnspan=3, padx=20, pady=(0, 10), sticky="w")
+
+        # Add Preserve EXIF metadata checkbox
+        preserve_exif_checkbox = ctk.CTkCheckBox(
+            settings_frame,
+            text="Preserve EXIF metadata",
+            variable=self.preserve_exif,
+            checkbox_width=20,
+            checkbox_height=20,
+            corner_radius=4,
+            border_width=2,
+            hover=True,
+            fg_color=HIGHLIGHT_COLOR,
+            hover_color=self.adjust_color_brightness(HIGHLIGHT_COLOR, -20)
+        )
+        preserve_exif_checkbox.grid(row=6, column=0, columnspan=3, padx=20, pady=(0, 10), sticky="w")
 
         # Create preview frame with scrollbar
         preview_container = ctk.CTkFrame(self, fg_color="transparent")
@@ -663,7 +675,8 @@ class OptiWebpGUI(ctk.CTk):
             # Sun
             draw.ellipse([44, 12, 52, 20], fill=self.adjust_color_brightness(HIGHLIGHT_COLOR, 60))
             
-            return ImageTk.PhotoImage(img)
+            # Return as CTkImage
+            return CTkImage(light_image=img, size=(64, 64))
         except Exception as e:
             print(f"Error creating placeholder image: {e}")
             return None
@@ -698,8 +711,8 @@ class OptiWebpGUI(ctk.CTk):
                 
                 # Resize with high-quality resampling
                 img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
-                photo = ImageTk.PhotoImage(img)
-                return photo
+                ctk_image = CTkImage(light_image=img, size=(new_width, new_height))
+                return ctk_image
         except Exception as e:
             print(f"Error creating thumbnail for {image_path}: {e}")
             return None
@@ -743,7 +756,7 @@ class OptiWebpGUI(ctk.CTk):
         
         # Get list of image files
         image_files = []
-        extensions = ('*.jpg', '*.jpeg', '*.png', '*.gif', '*.bmp')
+        extensions = ('*.jpg', '*.jpeg', '*.png', '*.gif', '*.bmp', '*.heic', '*.tiff', '*.tif')
         
         if self.include_subdirectories.get():
             # Include all subdirectories
@@ -764,10 +777,11 @@ class OptiWebpGUI(ctk.CTk):
             
             # Create thumbnails for preview
             for image_path in image_files:
-                photo = self.create_thumbnail(image_path)
-                if photo:
-                    label = ctk.CTkLabel(self.preview_frame, image=photo, text="")
-                    self.preview_images.append((label, photo))
+                ctk_image = self.create_thumbnail(image_path)
+                if ctk_image:
+                    label = ctk.CTkLabel(self.preview_frame, image=ctk_image, text="")
+                    label.image = ctk_image  # Prevent garbage collection
+                    self.preview_images.append((label, image_path))
             
             # Update grid layout
             if self.preview_images:
@@ -884,6 +898,8 @@ class OptiWebpGUI(ctk.CTk):
                 if not (self.custom_output.get() and include_subdirectories):
                     preserve_structure = True  # Default to True in other cases
 
+                preserve_exif = self.preserve_exif.get()
+
                 opti_webp.resize_and_convert(
                     directory, 
                     max_width,
@@ -893,7 +909,8 @@ class OptiWebpGUI(ctk.CTk):
                     self.custom_output.get(),  # use_custom_output parameter
                     output_path,  # custom_output_dir parameter
                     preserve_structure,  # preserve_structure parameter
-                    update_progress  # progress_callback parameter
+                    update_progress,  # progress_callback parameter
+                    preserve_exif  # NEW: pass preserve_exif to backend
                 )
                 
                 # Ensure progress is at 100% when done
