@@ -2,6 +2,13 @@ import os
 import sys
 from PIL import Image
 
+# Try to register HEIC support if pillow_heif is available
+try:
+    import pillow_heif
+    pillow_heif.register_heif_opener()
+except ImportError:
+    print("Warning: pillow-heif is not installed. HEIC images will not be supported. To enable HEIC support, run: pip install pillow-heif")
+
 def get_icon_path():
     """Get the path to the application icon file."""
     if hasattr(sys, '_MEIPASS'):
@@ -24,7 +31,7 @@ def count_images(directory, include_subdirs=False):
     print(f"Optimizable Images found: {image_count}")
     return image_count
 
-def process_image(img_path, max_width, max_height, delete_original=False, custom_output_dir=None, preserve_structure=True, progress_callback=None, base_directory=None):
+def process_image(img_path, max_width, max_height, delete_original=False, custom_output_dir=None, preserve_structure=True, progress_callback=None, base_directory=None, preserve_exif=False):
     try:
         filename = os.path.basename(img_path)
         directory = os.path.dirname(img_path)
@@ -33,6 +40,9 @@ def process_image(img_path, max_width, max_height, delete_original=False, custom
         
         # Step 1: Loading
         img = Image.open(img_path)
+        exif_data = None
+        if preserve_exif and hasattr(img, 'info') and 'exif' in img.info:
+            exif_data = img.info['exif']
         if progress_callback:
             progress_callback(0.2)  # 20% progress for loading
         
@@ -94,7 +104,10 @@ def process_image(img_path, max_width, max_height, delete_original=False, custom
         # Step 4: Convert to WebP
         webp_filename = os.path.splitext(filename)[0] + ".webp"
         webp_path = os.path.join(output_dir, webp_filename)
-        img.save(webp_path, "WEBP")
+        save_kwargs = {}
+        if preserve_exif and exif_data is not None:
+            save_kwargs['exif'] = exif_data
+        img.save(webp_path, "WEBP", **save_kwargs)
         print(f"Converted image to WebP: {webp_filename}")
         
         if progress_callback:
@@ -118,7 +131,7 @@ def process_image(img_path, max_width, max_height, delete_original=False, custom
         print(f"An error occurred while processing image {filename}: {e}")
         return False
 
-def resize_and_convert(directory, max_width, max_height, delete_original=False, process_subdirs=False, use_custom_output=False, custom_output_dir=None, preserve_structure=True, progress_callback=None):
+def resize_and_convert(directory, max_width, max_height, delete_original=False, process_subdirs=False, use_custom_output=False, custom_output_dir=None, preserve_structure=True, progress_callback=None, preserve_exif=False):
     image_count = count_images(directory, process_subdirs)
     if image_count == 0:
         print("No optimizable images found.")
@@ -147,7 +160,7 @@ def resize_and_convert(directory, max_width, max_height, delete_original=False, 
                     img_path = os.path.join(root, filename)
                     if process_image(img_path, max_width, max_height, delete_original, 
                                      custom_output_dir if use_custom_output else None, 
-                                     preserve_structure, progress_callback, base_directory):
+                                     preserve_structure, progress_callback, base_directory, preserve_exif):
                         processed_count += 1
     else:
         # Process only the selected directory
@@ -156,7 +169,7 @@ def resize_and_convert(directory, max_width, max_height, delete_original=False, 
                 img_path = os.path.join(directory, filename)
                 if process_image(img_path, max_width, max_height, delete_original, 
                                  custom_output_dir if use_custom_output else None, 
-                                 preserve_structure, progress_callback, base_directory):
+                                 preserve_structure, progress_callback, base_directory, preserve_exif):
                     processed_count += 1
     
     print(f"Successfully processed {processed_count} out of {image_count} images.")
